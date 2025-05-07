@@ -1,6 +1,6 @@
 {
     "private": true,
-    "name": "@solana/wallet-standard-ghost",
+    "name": "cactus-standard-wallet",
     "version": "0.1.1",
     "author": "Solana Maintainers <maintainers@solana.foundation>",
     "repository": "https://github.com/solana-labs/wallet-standard",

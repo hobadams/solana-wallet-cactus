@@ -33,28 +33,28 @@ import {
     type StandardEventsOnMethod,
 } from '@wallet-standard/features';
 import bs58 from 'bs58';
-import { GhostWalletAccount } from './account.js';
+import { CactusWalletAccount } from './account.js';
 import { icon } from './icon.js';
 import type { SolanaChain } from './solana.js';
 import { isSolanaChain, isVersionedTransaction, SOLANA_CHAINS } from './solana.js';
 import { bytesEqual } from './util.js';
-import type { Ghost } from './window.js';
+import type { Cactus } from './window.js';
 
-export const GhostNamespace = 'ghost:';
+export const CactusNamespace = 'cactus:';
 
-export type GhostFeature = {
-    [GhostNamespace]: {
-        ghost: Ghost;
+export type CactusFeature = {
+    [CactusNamespace]: {
+        cactus: Cactus;
     };
 };
 
-export class GhostWallet implements Wallet {
+export class CactusWallet implements Wallet {
     readonly #listeners: { [E in StandardEventsNames]?: StandardEventsListeners[E][] } = {};
     readonly #version = '1.0.0' as const;
-    readonly #name = 'Ghost' as const;
+    readonly #name = 'Cactus' as const;
     readonly #icon = icon;
-    #account: GhostWalletAccount | null = null;
-    readonly #ghost: Ghost;
+    #account: CactusWalletAccount | null = null;
+    readonly #cactus: Cactus;
 
     get version() {
         return this.#version;
@@ -79,7 +79,7 @@ export class GhostWallet implements Wallet {
         SolanaSignTransactionFeature &
         SolanaSignMessageFeature &
         SolanaSignInFeature &
-        GhostFeature {
+        CactusFeature {
         return {
             [StandardConnect]: {
                 version: '1.0.0',
@@ -111,8 +111,8 @@ export class GhostWallet implements Wallet {
                 version: '1.0.0',
                 signIn: this.#signIn,
             },
-            [GhostNamespace]: {
-                ghost: this.#ghost,
+            [CactusNamespace]: {
+                cactus: this.#cactus,
             },
         };
     }
@@ -121,16 +121,16 @@ export class GhostWallet implements Wallet {
         return this.#account ? [this.#account] : [];
     }
 
-    constructor(ghost: Ghost) {
-        if (new.target === GhostWallet) {
+    constructor(cactus: Cactus) {
+        if (new.target === CactusWallet) {
             Object.freeze(this);
         }
 
-        this.#ghost = ghost;
+        this.#cactus = cactus;
 
-        ghost.on('connect', this.#connected, this);
-        ghost.on('disconnect', this.#disconnected, this);
-        ghost.on('accountChanged', this.#reconnected, this);
+        cactus.on('connect', this.#connected, this);
+        cactus.on('disconnect', this.#disconnected, this);
+        cactus.on('accountChanged', this.#reconnected, this);
 
         this.#connected();
     }
@@ -150,13 +150,13 @@ export class GhostWallet implements Wallet {
     }
 
     #connected = () => {
-        const address = this.#ghost.publicKey?.toBase58();
+        const address = this.#cactus.publicKey?.toBase58();
         if (address) {
-            const publicKey = this.#ghost.publicKey!.toBytes();
+            const publicKey = this.#cactus.publicKey!.toBytes();
 
             const account = this.#account;
             if (!account || account.address !== address || !bytesEqual(account.publicKey, publicKey)) {
-                this.#account = new GhostWalletAccount({ address, publicKey });
+                this.#account = new CactusWalletAccount({ address, publicKey });
                 this.#emit('change', { accounts: this.accounts });
             }
         }
@@ -170,7 +170,7 @@ export class GhostWallet implements Wallet {
     };
 
     #reconnected = () => {
-        if (this.#ghost.publicKey) {
+        if (this.#cactus.publicKey) {
             this.#connected();
         } else {
             this.#disconnected();
@@ -179,7 +179,7 @@ export class GhostWallet implements Wallet {
 
     #connect: StandardConnectMethod = async ({ silent } = {}) => {
         if (!this.#account) {
-            await this.#ghost.connect(silent ? { onlyIfTrusted: true } : undefined);
+            await this.#cactus.connect(silent ? { onlyIfTrusted: true } : undefined);
         }
 
         this.#connected();
@@ -188,7 +188,7 @@ export class GhostWallet implements Wallet {
     };
 
     #disconnect: StandardDisconnectMethod = async () => {
-        await this.#ghost.disconnect();
+        await this.#cactus.disconnect();
     };
 
     #signAndSendTransaction: SolanaSignAndSendTransactionMethod = async (...inputs) => {
@@ -202,7 +202,7 @@ export class GhostWallet implements Wallet {
             if (account !== this.#account) throw new Error('invalid account');
             if (!isSolanaChain(chain)) throw new Error('invalid chain');
 
-            const { signature } = await this.#ghost.signAndSendTransaction(
+            const { signature } = await this.#cactus.signAndSendTransaction(
                 VersionedTransaction.deserialize(transaction),
                 {
                     preflightCommitment,
@@ -232,7 +232,7 @@ export class GhostWallet implements Wallet {
             if (account !== this.#account) throw new Error('invalid account');
             if (chain && !isSolanaChain(chain)) throw new Error('invalid chain');
 
-            const signedTransaction = await this.#ghost.signTransaction(VersionedTransaction.deserialize(transaction));
+            const signedTransaction = await this.#cactus.signTransaction(VersionedTransaction.deserialize(transaction));
 
             const serializedTransaction = isVersionedTransaction(signedTransaction)
                 ? signedTransaction.serialize()
@@ -260,7 +260,7 @@ export class GhostWallet implements Wallet {
 
             const transactions = inputs.map(({ transaction }) => VersionedTransaction.deserialize(transaction));
 
-            const signedTransactions = await this.#ghost.signAllTransactions(transactions);
+            const signedTransactions = await this.#cactus.signAllTransactions(transactions);
 
             outputs.push(
                 ...signedTransactions.map((signedTransaction) => {
@@ -290,7 +290,7 @@ export class GhostWallet implements Wallet {
             const { message, account } = inputs[0]!;
             if (account !== this.#account) throw new Error('invalid account');
 
-            const { signature } = await this.#ghost.signMessage(message);
+            const { signature } = await this.#cactus.signMessage(message);
 
             outputs.push({ signedMessage: message, signature });
         } else if (inputs.length > 1) {
@@ -307,10 +307,10 @@ export class GhostWallet implements Wallet {
 
         if (inputs.length > 1) {
             for (const input of inputs) {
-                outputs.push(await this.#ghost.signIn(input));
+                outputs.push(await this.#cactus.signIn(input));
             }
         } else {
-            return [await this.#ghost.signIn(inputs[0])];
+            return [await this.#cactus.signIn(inputs[0])];
         }
 
         return outputs;
