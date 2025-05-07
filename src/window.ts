@@ -24,4 +24,11 @@ export interface Cactus extends CactusEventEmitter {
     signAllTransactions<T extends Transaction | VersionedTransaction>(transactions: T[]): Promise<T[]>;
     signMessage(message: Uint8Array): Promise<{ signature: Uint8Array }>;
     signIn(input?: SolanaSignInInput): Promise<SolanaSignInOutput>;
+    isCactusWallet?: boolean;
+}
+
+declare global {
+    interface Window {
+        cactus?: Cactus;
+    }
 }
